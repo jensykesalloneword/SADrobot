@@ -1,0 +1,157 @@
+load("/home/student/dev/urbi/urbi-for-bioloid/dynamixel.u");
+var Global.d = Dynamixel.new;
+
+
+class Global.Dialog {
+
+  
+
+var server =
+
+do (Server.new) {
+
+var this.fl = Dynamixel.Device.new(d,4,Dynamixel.DeviceDesc.AX12); //instantiate each servo
+	var this.fr = Dynamixel.Device.new(d,10,Dynamixel.DeviceDesc.AX12);
+	var this.bl = Dynamixel.Device.new(d,31,Dynamixel.DeviceDesc.AX12);
+	var this.br = Dynamixel.Device.new(d,15,Dynamixel.DeviceDesc.AX12);
+
+/*
+	function moveFL(speed){
+		this.fl.targetSpeed = speed;
+	};
+
+	function moveFR(speed){
+		this.fr.targetSpeed = speed;
+	};
+
+	function moveBL(speed){
+		this.bl.targetSpeed = speed;
+	};
+
+	function moveBR(speed){
+		this.br.targetSpeed = speed;
+	};
+*/
+
+// id 4
+var speedFL = 0;
+// id 10
+var speedFR = 0;
+// id 31
+var speedBL = 0;
+// id 15
+var speedBR = 0;
+// average speed to be sent back to arduino
+var speedAVG = 0;
+
+var values=0;
+
+var str =0;
+
+at (connection?(var socket)){ //establishing network connection with the socket function
+
+
+at (socket.received?(var data))
+
+{
+
+echo(data);
+
+str = data;
+
+values = str.split("__"); // decoding the string value received from Processing into two floats (x and y)
+
+speedFL = values[0].asFloat;
+//speedFR = values[1].asFloat;
+//speedBL = values[2].asFloat;
+speedBR = values[3].asFloat;
+
+
+//continuously check if LDR nearest fl is at value 0 then move fl and fr wheels.(gradually move forward in ambient light) 
+{ whenever (values[0].asFloat <= 0)
+
+this.fl.speed = speedFL;
+this.fr.speed = speedFR;
+
+};
+
+//continuously check if LDR nearest br is at value 7 (bright) then move bl and br wheels.(reverse away from light)
+{ whenever (values[3].asFloat <= 7)
+echo(reverse);
+this.bl.speed = -speedBL;
+this.br.speed = -speedBR;
+};
+
+//check once if values of LDR by bl wheel is in darkness then all wheels move (360 #fast party mode)
+{at (values[2].asFloat <= -9)
+echo(party);
+
+this.fl.speed = speedFL;
+this.fr.speed = speedFR;
+this.bl.speed  = speedBL;
+this.br.speed = speedBR;
+};
+
+
+//continuously check if ldr by BL and BR are quite dark then turn left.
+{whenever (values[2].asFloat <= -5) && whenever (values[1].asFloat <=-5)
+this.fl.speed = speedFL;
+this.bl.speed = speedBL;
+
+
+//this.moveFL(speedFL);
+//this.moveFR(speedFR);
+//this.moveBL(speedBL);
+//this.moveBR(speedBR);
+
+speedAVG = (speedFL + speedFR + speedBL + speedBR) / 4;
+
+socket.write(""+speedAVG);
+
+/*
+var reply = Dialog.reply(data);
+
+
+if (reply == "off")
+
+//socket.disconnect;
+*/
+};
+
+};
+
+}|;
+
+
+var client = do (Socket.new) {
+
+at (received?(var data)) {
+
+var reply = Dialog.reply(data); write("client: " + reply); echo("client: " + reply);
+
+}; }|;
+
+
+
+every (100ms) Socket.poll,
+
+
+server.listen("localhost", "1234");
+
+clog << "connecting to %s:%s" % [server.host, server.port];
+
+
+client.connect(server.host, server.port);
+
+//echo("client: " + Dialog.lines[0]);
+
+//client.write(Dialog.lines[0]);
+
+//x.targetPos=stuff;
+
+
+waituntil(client.disconnected?);
+
+};
+
+var a = Dialog.new();
