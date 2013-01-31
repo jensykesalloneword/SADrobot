@@ -1,0 +1,73 @@
+
+
+load("/home/student/dev/urbi/urbi-for-bioloid/dynamixel.u");
+
+var Global.d = Dynamixel.new;
+
+
+class Global.Dialog {
+
+var lines =
+ [
+"hello",
+"hello2",
+"how are ya",
+ "not good",
+"urbi problems?",
+"yes..",
+"I see.."
+]|;
+
+function reply(var s) {
+for (var i: lines.size - 1) if (s == lines[i])
+return lines[i + 1]; "off";
+} }|;
+
+var server = do (Server.new) {
+var x = Dynamixel.Device.new(d, 2, Dynamixel.DeviceDesc.AX12); //instantiate robotic arm 1 of 2
+var y = Dynamixel.Device.new(d, 3, Dynamixel.DeviceDesc.AX12); // instantiate robotic arm21 of 2
+
+//x.targetSpeed = 0.5;
+//y.targetSpeed = 0.5;
+
+var values=0;
+var str =0;
+at (connection?(var socket)){ //establishing network connection with the socket function
+ 
+at (socket.received?(var data))
+{
+echo(data);
+ str = data;
+ values = str.split("__"); // decoding the string value received from Processing into two floats (x and y)
+
+
+
+echo(values[0].asFloat);
+echo(values[1].asFloat);
+
+var reply = Dialog.reply(data);
+
+//if (reply == "off")
+//socket.disconnect;
+};
+
+};
+}|;
+
+var client = do (Socket.new) {
+
+at (received?(var data)) {
+var reply = Dialog.reply(data); write(reply); echo("client: " + reply);
+}; }|;
+
+every (100ms) Socket.poll, server.listen("localhost", "1234");
+clog << "connecting to %s:%s" % [server.host, server.port];
+
+client.connect(server.host, server.port);
+every (200ms) client.write(""+5.0+"");
+
+//echo("client: " + Dialog.lines[0]);
+//client.write(Dialog.lines[0]);
+//x.targetPos=stuff;
+
+waituntil(client.disconnected?); 
