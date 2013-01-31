@@ -1,0 +1,250 @@
+/*
+First behaviours = mobility according to light.
+Robot has a head which contains the sensor.
+[27/11/2012][db]:
+    Values for moving sensor havent been checked.
+    Will need continuous rotations for the moving forward / backward
+*/
+
+load("/home/student/dev/urbi/urbi-for-bioloid/dynamixel.u");
+var Global.d = Dynamixel.new;
+
+class Thing
+   {
+    //this is the contructor 
+    function init()
+    {
+ // robot mobility based on three servos,
+ // 2 used to move continuously (left and right wheel),
+ // 1 used as pivot wheel
+                var this.leftWheel = Dynamixel.Device.new(d,1,Dynamixel.DeviceDesc.AX12); //instantiate each servo
+                var this.rightWheel = Dynamixel.Device.new(d,2,Dynamixel.DeviceDesc.AX12);
+                var this.pivotWheel = Dynamixel.Device.new(d,3,Dynamixel.DeviceDesc.AX12);
+ // sensor
+                var this.sensor = Dynamixel.Device.new(d,100,Dynamixel.DeviceDesc.AXS1); //instantiate the sensor  
+ // light variables
+                var this.currentLight = 0;
+ var this.previousLight = 0;
+ var this.lightArray = [];
+ var this.lightThreshold = 20;
+ // time variables (in seconds)
+ var this.timer = 0;
+ var this.triggeredTime = 0;
+ var this.actionTimer = false;
+ // action tags
+ var this.doMoveTag = Tag.new;
+ this.doMoveTag.freeze;
+    };
+    
+ // those two whenever functions could be triggered as raw. for now they are commented out using /* ... */
+        /*
+ whenever (this.sensor.light > this.lightThreshold) {        
+ this.doMoveTag.unfreeze;//Starts the code  after: this.actionTag:
+ };
+ 
+ whenever (this.sensor.light < this.lightThreshold) {        
+ this.doMoveTag.freeze;//Starts the code  after: this.actionTag:
+ };
+ */
+
+
+ // startLightCheck(), triggered by startAll()
+    function startLightCheck()
+    {
+ // recurrent function happening concurrently to the rest of the code.
+        detach({
+               every(1s)
+               {
+ // getting the level of ambient lght from the sensor
+                this.currentLight = this.sensor.light;
+ // debounce 
+ this.sleep(0.05);
+ // if behaviour var is set to 1, do behaviour 1
+ if (this.behaviour == 1) {
+ // behaviour: move away from light:
+ // if too much light according previous reading and light threshold,
+ if (this.currentLight > this.previousLight) {
+ if (this.currentLight > this.lightThreshold) {
+ // if the timer for the action is not set
+ if (this.actionTimer == false) {
+ // trigger function move away, store time and set the timer for action
+ this.startMoveAwayFromLight();
+ this.triggeredTime = timer;
+ this.actionTimer = true; 
+ } 
+ }
+ }
+ // if current time is greater than stored time of action + 10 seconds, 
+  // reset action and change behaviour to 2
+ if (this.timer > (this.triggeredTime +10)) {
+ this.actionTimer = false;
+ this.behaviour = 2;
+ }
+ // if behaviour var is set to 2, do behaviour 2
+ } else if (this.behaviour == 2) {
+                                    // behaviour: move towards from light:
+ // if too little light according previous reading and light threshold,
+ if (this.currentLight < this.previousLight) {
+ if (this.currentLight < this.lightThreshold) {
+ // if the timer for the action is not set
+ if (this.actionTimer == false) {
+ // trigger function move away, store time and set the timer for action
+ this.startMoveTowardsLight();
+ this.triggeredTime = timer;
+ this.actionTimer = true;
+}
+ 
+ // if behaviour var is set to 3, do behaviour 3
+ } else if (this.behaviour == 3) {
+                                     // behaviour: 360º spin at maximum light threshold:
+ // if light threshold is 0-32.
+ if (this.currentLight = 32) {
+ 
+ // if the timer for the action is not set
+ if (this.actionTimer == false) {
+ // trigger function move 360º, store time and set the timer for action
+ this.startMoveRotate();
+ this.triggeredTime = timer;
+ this.actionTimer = true;
+}
+ 
+ }
+ // increase time of 1
+ timer ++;
+               }; 
+               });
+     };
+
+ // first behaviour hiding from light
+    function startMoveAwayFromLight () {
+ /*
+ - if light value < 20 : stay
+   Else go forward
+ - if light stronger : rotate 15 
+   Else go forward
+ */
+ // rotate robot of n
+ this.pivotWheel.targetPos = 0.3;// to check in radians
+ // set doMoveTag code using goForward();
+ this.goForward();
+ // unfreeze doMoveTag
+ this,pivotWheel.targetPos = 0;// reset pivot wheel to be straight preventing robot doing circles.(maybe this should go in doMoveTag though????)
+ this.doMoveTag.unfreeze;
+ }
+ // freeze doMoveTag
+ function stopMoveAwayFromLight () {
+ this.doMoveTag.freeze;
+ }
+ // set doMoveTag function to go forward
+ function goForward()
+ {
+          this.doMoveTag :
+          {
+               this.leftWheel.targetPos = 1,
+               this.rightWheel.targetPos = 1,
+           },
+  };
+ // set doMoveTag function to go backward
+ function goBackward()
+ {
+          this.doMoveTag :
+          {
+               this.leftWheel.targetPos = -1,
+               this.rightWheel.targetPos = -1,
+           },
+  };
+      
+  // start all function
+     function startAll()
+     {        
+        this.startLightCheck();       
+     };
+// second behaviour seeking the light
+    function startMoveTowardsLight () {
+ /*
+ - if light value >= 20 : go forward
+   Else stay
+ - if light weaker : rotate 15
+   Else stay
+ */
+ // rotate robot of n
+ this.pivotWheel.targetPos = 0.3;// to check in radians
+ // set doMoveTag code using goForward();
+ this.goForward();
+ // unfreeze doMoveTag
+ this,pivotWheel.targetPos = 0;// reset pivot wheel to be straight preventing robot doing circles.(maybe this should go in doMoveTag though????)
+ this.doMoveTag.unfreeze;
+ }
+ // unfreeze doMoveTag
+ function stopMoveTowardsLight () {
+ this.doMoveTag.unfreeze;
+ }
+ // set doMoveTag function to go forward
+ function goForward()
+ {
+          this.doMoveTag :
+          {
+               this.leftWheel.targetPos = 1,
+               this.rightWheel.targetPos = 1,
+           },
+  };
+ // set doMoveTag function to go backward
+ function goBackward()
+ {
+          this.doMoveTag :
+          {
+               this.leftWheel.targetPos = -1,
+               this.rightWheel.targetPos = -1,
+           },
+  };
+      
+  // start all function
+     function startAll()
+     {        
+        this.startLightCheck();       
+     };
+     
+     // third behaviour maximum light exposure 360º party mode
+    function startMoveRotate () {
+ /*
+ - if light value < 32 : stay
+   Else go forward
+ - if light stronger : rotate 360
+   Else go forward
+ */
+ // rotate robot of n
+ this.pivotWheel.targetPos = 0.3;// to check in radians
+ // set doMoveTag code using goForward();
+ this.goForward();
+ // unfreeze doMoveTag
+ this.doMoveTag.unfreeze;
+ }
+ // freeze doMoveTag
+ function stopMoveAwayFromLight () {
+ this.doMoveTag.freeze;
+ }
+ // set doMoveTag function to go forward
+ function goForward()
+ {
+          this.doMoveTag :
+          {
+               this.leftWheel.targetPos = 1,
+               this.rightWheel.targetPos = 1,
+           },
+  };
+ // set doMoveTag function to go backward
+ function goBackward()
+ {
+          this.doMoveTag :
+          {
+               this.leftWheel.targetPos = -1,
+               this.rightWheel.targetPos = -1,
+           },
+  };
+      
+  // start all function
+     function startAll()
+     {        
+        this.startLightCheck();       
+     };
+};
