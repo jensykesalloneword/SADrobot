@@ -9,6 +9,10 @@ class Global.Dialog {
 var server =
 
 do (Server.new) {
+//fl-front left
+//fr= front right
+//bl= back left
+//br = back right wheels
 
 var this.fl = Dynamixel.Device.new(d,4,Dynamixel.DeviceDesc.AX12); //instantiate each servo
 	var this.fr = Dynamixel.Device.new(d,10,Dynamixel.DeviceDesc.AX12);
@@ -62,10 +66,11 @@ str = data;
 values = str.split("__"); // decoding the string value received from Processing into two floats (x and y)
 
 speedFL = values[0].asFloat;
-speedFR = values[1].asFloat;
+speedFR = values[1].asFloat;//still reading an average from these at same time as following at commands below.
 speedBL = values[2].asFloat;
 speedBR = values[3].asFloat;
 
+//if LDR nearest FL wheel is in the middle of dark and bright at a value of 0 then move FL and FR wheels.this is only read once
 { at (values[0].asFloat <= 0)
 
 this.fl.speed = speedFL;
@@ -73,6 +78,7 @@ this.fr.speed = speedFR;
 
 };
 
+//if LDR nearest back right wheel is reading a value 0 move the bl and br wheels. this is only read once.
 { at (values[3].asFloat <= 0)
 
 this.bl.speed = -speedBL;
