@@ -66,13 +66,17 @@ speedFR = values[1].asFloat;
 speedBL = values[2].asFloat;
 speedBR = values[3].asFloat;
 
-{ at (values[0].asFloat <= 0)
+
+//if LDR by fl wheel is value 0 move fl and fr wheels. only call once
+{ at (values[0].asFloat <= 0) 
 
 this.fl.speed = speedFL;
 this.fr.speed = speedFR;
 
 };
 
+
+//continuously check if LDR by br wheel is at value 7 (very bright) move bl and br wheels.
 { whenever (values[3].asFloat <= -7)
 
 this.bl.speed = -speedBL;
