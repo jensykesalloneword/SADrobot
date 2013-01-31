@@ -1,0 +1,218 @@
+load("/home/student/dev/urbi/urbi-for-bioloid/dynamixel.u");
+var Global.d = Dynamixel.new;
+
+class Thing
+{
+    //this is the contructor 
+    function init()
+    {
+                 // robot mobility based on three servos,
+                 // 2 used to move continuously (left and right wheel),
+                 // 1 used as pivot wheel
+                var this.leftWheel = Dynamixel.Device.new(d,15,Dynamixel.DeviceDesc.AX12); //instantiate each servo
+                var this.rightWheel = Dynamixel.Device.new(d,31,Dynamixel.DeviceDesc.AX12);
+                var this.pivotWheel = Dynamixel.Device.new(d,4,Dynamixel.DeviceDesc.AX12);
+                // sensor
+                var this.sensor = Dynamixel.Device.new(d,100,Dynamixel.DeviceDesc.AXS1); //instantiate the sensor
+  
+                // light variables - sensor.lightCenter can get values from 0 to 255
+                var this.currentLight = 0;
+                var this.previousLight = 0;
+
+                // time variables (in seconds)
+                var this.timer = 0;
+                var this.behaviour1Duration = 5;
+  			var this.behaviour2Duration = 10;
+				var this.behaviour3Duration = 20;
+                var this.triggeredTime = 0;
+                var this.actionTimer = false;
+
+
+                // setting the two servos for continuous rotation
+               // this.leftWheel.targetPos = 0;
+                this.leftWheel.speed = 0;
+               // this.leftWheel.cwLimit = this.leftWheel.ccwLimit = 0;
+
+               // this.rightWheel.targetPos = 0;
+                this.rightWheel.speed = 0;
+               // this.rightWheel.cwLimit = this.rightWheel.ccwLimit = 0;
+                this.sleep(500ms);
+	};
+
+
+
+ 	// startLightCheck(), triggered by startAll()
+    function startLightCheck()
+    {
+ 		// recurrent function happening concurrently to the rest of the code.
+        detach({
+               every(1s)
+               {
+                // getting the level of ambient lght from the sensor
+                this.currentLight = this.sensor.lightCenter;
+                // debounce 
+                this.sleep(50ms);
+				
+				// behaviour: 360º spin at maximum light threshold:
+				// maximum light from sensor.lightCenter is 255.
+				if (this.currentLight >= 250) {
+					this.behaviour = 3;	
+				} else if (this.currentLight >= 125) {
+					this.behaviour = 1;	
+				} else {
+					this.behaviour = 2;	
+				};
+				
+                // if this.behaviour is set to 1, do behaviour 1
+                if (this.behaviour == 1) {
+                    // behaviour: move away from light:
+                    // if too much light according previous reading and light threshold,
+                    if (this.currentLight > this.previousLight) {
+                        // if the timer for the action is not set
+                        if (this.actionTimer == false) {
+                            // trigger function move away, store time and set the timer for action
+                            this.startMoveAwayFromLight();
+                            this.triggeredTime = timer;
+                            this.actionTimer = true; 
+						};
+					};
+                 	// if current time is greater than stored time of action + behaviour duration, 
+                 	// reset action
+                    if (this.timer == (this.triggeredTime + this.behaviour1Duration)) {
+                        this.actionTimer = false;
+						this.stopMove();
+					};
+            	// if behaviour var is set to 2, do behaviour 2
+            	} else if (this.behaviour == 2) {
+                	// behaviour: move towards from light:
+                	// if too little light according previous reading and light threshold,
+                	if (this.currentLight < this.previousLight) {
+                        // if the timer for the action is not set
+                        if (this.actionTimer == false) {
+                            // trigger function move away, store time and set the timer for action
+                            this.startMoveTowardsLight();
+                            this.triggeredTime = timer;
+                            this.actionTimer = true;
+						};
+					};
+					// if current time is greater than stored time of action + behaviour duration,  
+                 	// reset action
+                    if (this.timer > (this.triggeredTime +this.behaviour2Duration)) {
+                        this.actionTimer = false;
+						this.stopMove();
+					};
+ 				// if behaviour var is set to 3, do behaviour 3
+				} else if (this.behaviour == 3) {
+					// if the timer for the action is not set
+				 	if (this.actionTimer == false) {
+				 		// trigger function move 360º, store time and set the timer for action
+				 		this.startMoveRotate();
+				 		this.triggeredTime = timer;
+				 		this.actionTimer = true;
+					};
+					// if current time is greater than stored time of action + behaviour duration, 
+                 	// reset action
+                    if (this.timer > (this.triggeredTime +this.behaviour3Duration)) {
+                        this.actionTimer = false;
+						this.stopMove();
+					};
+				};
+				
+				// keep record of light amount
+				this.previousLight = this.currentLight;
+
+ 				// increase time of 1
+ 				timer ++;
+               }; 
+               });
+     };
+
+ 	// first behaviour "hide"
+    function startMoveAwayFromLight ()
+	{
+ 		// rotate robot of n
+ 		this.pivotWheel.targetPos = 30deg;
+		sleep(50ms);
+ 		// set doMoveTag code using goForward();
+ 		this.goForward();
+		// give time for robot to move
+		sleep(500ms);
+		// rotating back to original position
+ 		this.pivotWheel.targetPos = -30deg;
+	};
+ 	// stop first behaviour
+ 	function stopMoveAwayFromLight ()
+	{
+ 		this.doMoveTag.freeze;
+	};
+
+
+	// second behaviour "seek"
+    function startMoveTowardsLight ()
+	{
+ 		// set speed of motors with goForward();
+ 		this.goForward();
+		// debounce
+		sleep(500ms);
+	};
+ 	// stop second behaviour
+ 	function stopMoveTowardsLight () {
+ 		this.doMoveTag.freeze;
+	};
+
+
+	// third behaviour maximum light exposure 360º party mode
+	function startMoveRotate ()
+	{
+		// rotate robot of n
+		this.pivotWheel.targetPos = 30deg;
+		// set speed of motors with goForward10();
+		this.goForward10();
+		// debounce
+		sleep(500ms);
+	};
+	// freeze doMoveTag
+	function stopMoveRotate ()
+	{
+		this.doMoveTag.freeze;
+	};
+
+
+
+
+ 	// set wheels to go forward
+ 	function goForward()
+ 	{
+		this.leftWheel.speed = -5;
+		this.rightWheel.speed = 5;
+  	};
+
+function goBackward()
+ 	{
+		this.leftWheel.speed = 5;
+		this.rightWheel.speed = -5;
+  	};
+
+ 	// set wheels to go backward
+ 	function goForward10()
+	{
+		this.leftWheel.speed = -10;
+		this.rightWheel.speed = 10;
+	};
+	
+	// set wheels to stop
+ 	function stopMove()
+ 	{
+		this.leftWheel.speed = 0;
+		this.rightWheel.speed = 0;
+  	};
+	
+	
+      
+  	// start all function
+    function startAll()
+    {        
+        this.startLightCheck();       
+    };
+
+};
