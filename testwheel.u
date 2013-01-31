@@ -1,0 +1,46 @@
+load("/home/student/dev/urbi/urbi-for-bioloid/dynamixel.u");
+var Global.d = Dynamixel.new;
+
+class Thing
+   {
+    //this is the contructor 
+    function init () {
+  var this.fl = Dynamixel.Device.new(d,4,Dynamixel.DeviceDesc.AX12); //instantiate each servo
+	var this.fr = Dynamixel.Device.new(d,10,Dynamixel.DeviceDesc.AX12);
+	var this.bl = Dynamixel.Device.new(d,31,Dynamixel.DeviceDesc.AX12);
+	var this.br = Dynamixel.Device.new(d,15,Dynamixel.DeviceDesc.AX12);
+
+this.fl.speed = this.fr.speed = this.bl.speed = this.br.speed = 0;
+};
+
+
+
+
+	function moveFL(speed){
+		this.fl.speed = speed;
+	};
+
+	function moveFR(speed){
+		this.fr.speed = speed;
+	};
+
+	function moveBL(speed){
+		this.bl.speed = speed;
+	};
+
+	function moveBR(speed){
+		this.br.speed = speed;
+	};
+};
+
+    
+var a = Thing.new;
+
+    
+
+ 
+ 
+    
+
+    
+
